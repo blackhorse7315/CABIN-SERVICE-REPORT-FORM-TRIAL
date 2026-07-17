@@ -2127,6 +2127,34 @@ ${report.cabinName || '-'}`;
             }
         }
 
+        function editReport(id) {
+            const report = appState.reports.find(r => r && r.id == id);
+            if (!report) return;
+
+            resetForm(); 
+
+            document.getElementById('edit-report-id').value = report.id;
+            document.getElementById('form-report-title').innerText = 'Edit Duty Report';
+            document.getElementById('form-submit-text').innerText = 'Update Report';
+
+            populateFormFields(report);
+
+            closeModal();
+            switchTab('add-report');
+            showToast("Mode Edit aktif. Silakan ubah data.", "info");
+        }
+
+        function deleteReportFromModal(id) {
+            if(confirm('Are you sure you want to delete this report?')) {
+                appState.reports = appState.reports.filter(r => r && r.id != id);
+                saveState(); 
+                
+                showToast("Report deleted successfully!");
+                renderHistoryTable(); 
+                closeModal();
+            }
+        }
+
         // ================= PDF GENERATION =================
         function printReportAsPDF(id) {
             const report = appState.reports.find(r => r && r.id == id);
@@ -2228,9 +2256,9 @@ ${report.cabinName || '-'}`;
                             Pax Remarks
                         </div>
                         <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top; border-bottom: 1px solid #f1f5f9;">Before Flight:</td><td style="padding: 6px 10px; white-space: pre-wrap; border-bottom: 1px solid #f1f5f9;">${report.remarkBefore || '-'}</td></tr>
-                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top; border-bottom: 1px solid #f1f5f9;">During Flight:</td><td style="padding: 6px 10px; white-space: pre-wrap; border-bottom: 1px solid #f1f5f9;">${report.remarkDuring || '-'}</td></tr>
-                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top;">After Flight:</td><td style="padding: 6px 10px; white-space: pre-wrap;">${report.remarkAfter || '-'}</td></tr>
+                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top; border-bottom: 1px solid #f1f5f9;">Before Flight:</td><td style="padding: 6px 10px; white-space: pre-wrap; border-bottom: 1px solid #f1f5f9; text-align: justify;">${report.remarkBefore || '-'}</td></tr>
+                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top; border-bottom: 1px solid #f1f5f9;">During Flight:</td><td style="padding: 6px 10px; white-space: pre-wrap; border-bottom: 1px solid #f1f5f9; text-align: justify;">${report.remarkDuring || '-'}</td></tr>
+                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top;">After Flight:</td><td style="padding: 6px 10px; white-space: pre-wrap; text-align: justify;">${report.remarkAfter || '-'}</td></tr>
                         </table>
                     </div>
 
@@ -2239,10 +2267,10 @@ ${report.cabinName || '-'}`;
                             F&B Preferences
                         </div>
                         <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top; border-bottom: 1px solid #fff7ed;">Food Restriction:</td><td style="padding: 6px 10px; white-space: pre-wrap; border-bottom: 1px solid #fff7ed;">${report.foodRes || '-'}</td></tr>
-                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top; border-bottom: 1px solid #fff7ed;">Favorite Food:</td><td style="padding: 6px 10px; white-space: pre-wrap; border-bottom: 1px solid #fff7ed;">${report.favFood || '-'}</td></tr>
-                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top; border-bottom: 1px solid #fff7ed;">Bev Restriction:</td><td style="padding: 6px 10px; white-space: pre-wrap; border-bottom: 1px solid #fff7ed;">${report.bevRes || '-'}</td></tr>
-                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top;">Favorite Bev:</td><td style="padding: 6px 10px; white-space: pre-wrap;">${report.favBev || '-'}</td></tr>
+                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top; border-bottom: 1px solid #fff7ed;">Food Restriction:</td><td style="padding: 6px 10px; white-space: pre-wrap; border-bottom: 1px solid #fff7ed; text-align: justify;">${report.foodRes || '-'}</td></tr>
+                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top; border-bottom: 1px solid #fff7ed;">Favorite Food:</td><td style="padding: 6px 10px; white-space: pre-wrap; border-bottom: 1px solid #fff7ed; text-align: justify;">${report.favFood || '-'}</td></tr>
+                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top; border-bottom: 1px solid #fff7ed;">Bev Restriction:</td><td style="padding: 6px 10px; white-space: pre-wrap; border-bottom: 1px solid #fff7ed; text-align: justify;">${report.bevRes || '-'}</td></tr>
+                            <tr><td style="width: 22%; font-weight: bold; padding: 6px 10px; vertical-align: top;">Favorite Bev:</td><td style="padding: 6px 10px; white-space: pre-wrap; text-align: justify;">${report.favBev || '-'}</td></tr>
                         </table>
                     </div>
 
@@ -2252,7 +2280,7 @@ ${report.cabinName || '-'}`;
                         </div>
                         <div style="padding: 0 10px; font-size: 12px;">
                             <p style="margin: 0 0 8px 0;"><strong>Allowance Status:</strong> <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: bold;">${report.allowance || '-'}</span></p>
-                            <p style="margin: 0;"><strong>Conclusion:</strong><br><span style="white-space: pre-wrap; display: inline-block; margin-top: 4px;">${report.conclusion || '-'}</span></p>
+                            <p style="margin: 0;"><strong>Conclusion:</strong><br><span style="white-space: pre-wrap; display: inline-block; margin-top: 4px; text-align: justify;">${report.conclusion || '-'}</span></p>
                         </div>
                     </div>
 
