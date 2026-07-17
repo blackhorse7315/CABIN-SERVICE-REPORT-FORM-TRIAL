@@ -39,20 +39,20 @@
 
         /* Print Styles for Native Vector PDF Generation */
         @media print {
-            body { background: white; min-width: 800px !important; margin: 0; padding: 0; }
+            body { background: white; width: 100% !important; margin: 0; padding: 0; }
             body > header, body > nav, body > main { display: none !important; }
             #header-nav-wrapper { display: none !important; } /* Ensure header wrapper is hidden */
             #detail-modal, #pax-selector-modal, #quick-add-pax-modal, #edit-pax-modal, #edit-cabin-modal, #edit-aircraft-modal, #form-no-modal, #settings-modal, #toast-container { display: none !important; }
             
             #print-container { 
                 display: block !important; 
-                width: 800px !important; 
+                width: 100% !important; 
                 margin: 0 auto;
                 position: relative; 
             }
             @page { 
                 size: A4 portrait; 
-                margin: 10mm 22.5mm 22.5mm 25.4mm; /* Top 1cm, Right 2.25cm, Bottom 2.25cm, Left 2.54cm */
+                margin: 10mm 20mm 20mm 20mm; 
             }
             /* Add page break control for images */
             .doc-image-container {
@@ -2264,10 +2264,24 @@ ${report.cabinName || '-'}`;
             // Tunggu sebentar untuk memastikan gambar ter-load sebelum print dialog muncul
             setTimeout(() => {
                 window.print();
+            }, 800); // Waktu dinaikkan sedikit untuk memberi napas pada browser mobile
+
+            // Perbaikan Mobile: Bersihkan DOM HANYA setelah dialog Print ditutup/selesai
+            const cleanupPrint = () => {
                 document.title = originalTitle;
                 printContainer.classList.add('hidden');
                 printContainer.innerHTML = '';
-            }, 500);
+                window.removeEventListener('afterprint', cleanupPrint);
+            };
+            
+            window.addEventListener('afterprint', cleanupPrint);
+            
+            // Fallback khusus untuk iOS Safari/Android Chrome yang kadang mengabaikan 'afterprint'
+            const fallbackCleanup = () => {
+                setTimeout(cleanupPrint, 1000);
+                window.removeEventListener('focus', fallbackCleanup);
+            };
+            window.addEventListener('focus', fallbackCleanup);
         }
 
         // ================= CRUD DATABASES =================
