@@ -37,6 +37,14 @@
             scrollbar-width: none;
         }
 
+        /* Print Mode UI (Mengatasi Bug Layar Putih di Mobile) */
+        body.is-printing > #header-nav-wrapper,
+        body.is-printing > main { display: none !important; }
+        body.is-printing > #print-container { display: block !important; }
+        @media print {
+            .no-print { display: none !important; }
+        }
+
         /* Print Styles for Native Vector PDF Generation */
         @media print {
             body { background: white; width: 100% !important; margin: 0; padding: 0; }
@@ -2138,9 +2146,29 @@ ${report.cabinName || '-'}`;
 
             const printContainer = document.getElementById('print-container');
             
-            // DESAIN HTML UNTUK PDF GENERATOR
+            // Aktifkan Tampilan Layar Penuh (Print Mode)
+            document.body.classList.add('is-printing');
+            
+            // Simpan title asli ke variable global window
+            window.originalTitleForPrint = document.title;
+            document.title = filename;
+
+            // DESAIN HTML UNTUK PDF GENERATOR + Navigasi Tutup (Manual Escape untuk Mobile)
             printContainer.innerHTML = `
-                <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; background: white; padding: 0; box-sizing: border-box;">
+                <!-- Top Bar Navigasi Khusus Mobile -->
+                <div class="no-print fixed top-0 left-0 w-full bg-slate-900 text-white px-4 md:px-6 py-3 flex justify-between items-center z-[9999] shadow-lg">
+                    <div class="text-xs md:text-sm font-medium flex items-center">
+                        <i data-lucide="printer" class="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-400"></i> Mode Pratinjau Cetak
+                    </div>
+                    <button onclick="closePrintMode()" class="bg-red-600 hover:bg-red-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-bold flex items-center shadow-md transition-colors border border-red-500">
+                        <i data-lucide="x-circle" class="w-4 h-4 mr-1.5"></i> Tutup & Kembali
+                    </button>
+                </div>
+                
+                <!-- Spasi buatan agar konten dokumen tidak tertutup top bar di layar HP -->
+                <div style="padding-top: 70px;" class="no-print"></div>
+
+                <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; background: white; padding: 0; box-sizing: border-box; max-width: 900px; margin: 0 auto;">
                     
                     <div style="text-align: center; margin-bottom: 20px; position: relative;">
                         <img src="https://lh3.googleusercontent.com/d/1WNcGjsZ9_Fp54xzOl01EYRqM6-wY5Zh7" alt="Logo" style="height: 60px; display: block; margin: 0 auto 10px auto; object-fit: contain;" />
@@ -2256,40 +2284,40 @@ ${report.cabinName || '-'}`;
                 </div>
             `;
 
+            lucide.createIcons({root: printContainer});
             printContainer.classList.remove('hidden');
 
-            const originalTitle = document.title;
-            document.title = filename;
+            showToast("Memuat tampilan PDF di layar HP...", "info");
 
-            // Tampilkan notifikasi loading
-            showToast("Menyiapkan dokumen PDF, harap tunggu sekitar 5 detik...", "info");
-
-            // Tunggu 5 detik agar seluruh data dan gambar ter-render sempurna di HP
+            // Tunggu 2 detik untuk memastikan HP selesai menggambar UI dan gambar base64
             setTimeout(() => {
                 window.print();
-            }, 5000);
+            }, 2000);
 
-            // Fungsi untuk membersihkan memori SETELAH proses print selesai/ditutup
-            const cleanupPrint = () => {
-                document.title = originalTitle;
+            // Coba membersihkan otomatis jika browser mendukung (misalnya di Desktop)
+            const handleAfterPrint = () => {
+                setTimeout(() => {
+                    if (document.body.classList.contains('is-printing')) {
+                        closePrintMode();
+                    }
+                }, 1000);
+                window.removeEventListener('afterprint', handleAfterPrint);
+            };
+            window.addEventListener('afterprint', handleAfterPrint);
+        }
+
+        // Fungsi Global untuk Keluar dari Mode Print Khusus Mobile
+        window.closePrintMode = function() {
+            if(window.originalTitleForPrint) {
+                document.title = window.originalTitleForPrint;
+            }
+            document.body.classList.remove('is-printing');
+            const printContainer = document.getElementById('print-container');
+            if (printContainer) {
                 printContainer.classList.add('hidden');
                 printContainer.innerHTML = '';
-                window.removeEventListener('afterprint', cleanupPrint);
-                window.removeEventListener('focus', fallbackCleanup);
-            };
-            
-            window.addEventListener('afterprint', cleanupPrint);
-            
-            // Fallback: Jika event 'afterprint' tidak didukung (iOS Safari / beberapa Android)
-            const fallbackCleanup = () => {
-                setTimeout(cleanupPrint, 1000);
-            };
-            
-            // Aktifkan deteksi kembali fokus KETIKA dialog print sudah dipanggil
-            setTimeout(() => {
-                window.addEventListener('focus', fallbackCleanup);
-            }, 5500);
-        }
+            }
+        };
 
         // ================= CRUD DATABASES =================
         function handleAddCabin(e) {
