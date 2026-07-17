@@ -2261,27 +2261,34 @@ ${report.cabinName || '-'}`;
             const originalTitle = document.title;
             document.title = filename;
 
-            // Tunggu sebentar untuk memastikan gambar ter-load sebelum print dialog muncul
+            // Tampilkan notifikasi loading
+            showToast("Menyiapkan dokumen PDF, harap tunggu sekitar 5 detik...", "info");
+
+            // Tunggu 5 detik agar seluruh data dan gambar ter-render sempurna di HP
             setTimeout(() => {
                 window.print();
-            }, 800); // Waktu dinaikkan sedikit untuk memberi napas pada browser mobile
+            }, 5000);
 
-            // Perbaikan Mobile: Bersihkan DOM HANYA setelah dialog Print ditutup/selesai
+            // Fungsi untuk membersihkan memori SETELAH proses print selesai/ditutup
             const cleanupPrint = () => {
                 document.title = originalTitle;
                 printContainer.classList.add('hidden');
                 printContainer.innerHTML = '';
                 window.removeEventListener('afterprint', cleanupPrint);
+                window.removeEventListener('focus', fallbackCleanup);
             };
             
             window.addEventListener('afterprint', cleanupPrint);
             
-            // Fallback khusus untuk iOS Safari/Android Chrome yang kadang mengabaikan 'afterprint'
+            // Fallback: Jika event 'afterprint' tidak didukung (iOS Safari / beberapa Android)
             const fallbackCleanup = () => {
                 setTimeout(cleanupPrint, 1000);
-                window.removeEventListener('focus', fallbackCleanup);
             };
-            window.addEventListener('focus', fallbackCleanup);
+            
+            // Aktifkan deteksi kembali fokus KETIKA dialog print sudah dipanggil
+            setTimeout(() => {
+                window.addEventListener('focus', fallbackCleanup);
+            }, 5500);
         }
 
         // ================= CRUD DATABASES =================
